@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import List
+from typing import List, Optional
 import numpy as np
 import plotly.graph_objects as go
 import numpy.typing as npt
@@ -33,9 +33,6 @@ class BSplineAirfoil(Airfoil):
     outlet_angle: float
     "outlet angle (rad)"
 
-    stagger_angle: float
-    "stagger angle (rad)"
-
     upper_thick_dist: List[float]
     "upper thickness distribution (length)"
 
@@ -47,6 +44,9 @@ class BSplineAirfoil(Airfoil):
 
     trailing_prop: float
     "trailing edge tangent line proportion [0.0-1.0] (dimensionless)"
+
+    stagger_angle: Optional[float] = None
+    "stagger angle (rad)"
 
     chord_length: float = 1.0
     "chord length (length)"
@@ -61,15 +61,21 @@ class BSplineAirfoil(Airfoil):
     "leading control point (length)"
 
     def __post_init__(self):
+        if self.stagger_angle is None:
+            self.stagger_angle = (self.inlet_angle + self.outlet_angle)/2
+
         self.degree = 3
         self.num_thickness_dist_pnts = len(self.upper_thick_dist) + 4
         self.thickness_dist_sampling = np.linspace(0, 1, self.num_thickness_dist_pnts, endpoint=True)    
         self.camber_bspline = get_bspline(self.camber_ctrl_pnts, self.degree)
         self.sampling = get_sampling(self.num_samples, self.is_cosine_sampling)
         self.axial_chord_length =  self.chord_length*np.cos(self.stagger_angle)
+        self.height = np.abs(self.chord_length*np.cos(self.stagger_angle))
+
 
     @cached_property
     def camber_ctrl_pnts(self):
+        assert self.stagger_angle is not None, "stagger angle is not defined"
         p_le = np.array(self.leading_ctrl_pnt)
 
         p_te = p_le + np.array([

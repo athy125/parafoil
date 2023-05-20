@@ -307,8 +307,9 @@ class TurboStagePassage(Passage):
     def surface(self):
         return [self.inflow_passage.surface, self.outflow_passage.surface]
 
-    def get_mesh(self):
-        return [self.inflow_passage.get_mesh(), self.outflow_passage.get_mesh()]
-
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
+    def visualize(self):
+        self.inflow_passage.visualize()
+        self.outflow_passage.visualize()
