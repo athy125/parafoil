@@ -18,7 +18,7 @@ def get_thickness_dist_ctrl_pnts(
     camber_normal_thickness = get_bspline(thickness_dist, degree)(sampling)
     return np.concatenate([
         [camber[0]],
-        camber + camber_normal*camber_normal_thickness,
+        camber + camber_normal * camber_normal_thickness,
         [camber[-1]]
     ])
 
@@ -63,30 +63,30 @@ class BSplineAirfoil(Airfoil):
     def __post_init__(self):
         self.degree = 3
         self.num_thickness_dist_pnts = len(self.upper_thick_dist) + 4
-        self.thickness_dist_sampling = np.linspace(0, 1, self.num_thickness_dist_pnts, endpoint=True)    
+        self.thickness_dist_sampling = np.linspace(0, 1, self.num_thickness_dist_pnts, endpoint=True)
         self.camber_bspline = get_bspline(self.camber_ctrl_pnts, self.degree)
         self.sampling = get_sampling(self.num_samples, self.is_cosine_sampling)
-        self.axial_chord_length =  self.chord_length*np.cos(self.stagger_angle)
+        self.axial_chord_length = self.chord_length * np.cos(self.stagger_angle)
 
     @cached_property
     def camber_ctrl_pnts(self):
         p_le = np.array(self.leading_ctrl_pnt)
 
         p_te = p_le + np.array([
-            self.chord_length*np.cos(self.stagger_angle),
-            self.chord_length*np.sin(self.stagger_angle)
+            self.chord_length * np.cos(self.stagger_angle),
+            self.chord_length * np.sin(self.stagger_angle)
         ])
 
         # leading edge tangent control point
-        p1 = p_le + self.leading_prop*np.array([
-            self.chord_length*np.cos(self.inlet_angle),
-            self.chord_length*np.sin(self.inlet_angle)
+        p1 = p_le + self.leading_prop * np.array([
+            self.chord_length * np.cos(self.inlet_angle),
+            self.chord_length * np.sin(self.inlet_angle)
         ])
 
         # trailing edge tangent control point
-        p2 = p_te - self.trailing_prop*np.array([
-            self.chord_length*np.cos(self.outlet_angle),
-            self.chord_length*np.sin(self.outlet_angle)
+        p2 = p_te - self.trailing_prop * np.array([
+            self.chord_length * np.cos(self.outlet_angle),
+            self.chord_length * np.sin(self.outlet_angle)
         ])
 
         return np.vstack((p_le, p1, p2, p_te))
@@ -102,9 +102,9 @@ class BSplineAirfoil(Airfoil):
             self.thickness_dist_sampling,
             self.degree
         )
-        bspline =  get_bspline(ctrl_pnts, self.degree)
+        bspline = get_bspline(ctrl_pnts, self.degree)
         return bspline(self.sampling)
-    
+
     @cached_property
     def bottom_coords(self):
         "lower side bspline"
@@ -128,8 +128,8 @@ class BSplineAirfoil(Airfoil):
     def camber_normal_coords(self) -> npt.NDArray:
         "camber normal line coordinates"
         camber_prime = self.camber_bspline.derivative(1)(self.thickness_dist_sampling)
-        normal = np.array([-camber_prime[:, 1], camber_prime[:, 0]]) / np.linalg.norm(camber_prime, axis=1)
-        return normal.T
+        normal = np.column_stack([-camber_prime[:, 1], camber_prime[:, 0]]) / np.linalg.norm(camber_prime, axis=1)[:, None]
+        return normal
 
     def get_coords(self):
         "airfoil coordinates"
